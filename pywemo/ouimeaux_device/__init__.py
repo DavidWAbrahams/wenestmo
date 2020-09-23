@@ -215,6 +215,12 @@ class Device(object):
                 self._state = 0
 
         return self._state
+        
+    def is_on(self):
+        return self.get_state() == 1
+    
+    def is_off(self):
+        return not self.is_on()
 
     def get_service(self, name):
         """Get service object by name."""

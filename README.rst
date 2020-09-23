@@ -1,64 +1,36 @@
-pyWeMo |Build Badge| |PyPI Version Badge| |PyPI Downloads Badge|
+WeNestMo
 ================================================================
-Lightweight Python 2 and Python 3 module to discover and control WeMo devices.
+Trigger Wemo switches based on Nest thermostat status.
 
-This is a stripped down version of the Python API for WeMo devices, `ouimeaux <https://github.com/iancmcc/ouimeaux>`_, with simpler dependencies.
+Turn on ceiling fans for cooling, or space heaters for heating etc.
+
+Google recently deprecated the Works With Nest program, and IFTTT is adding a paywal anyway. So if you want sync Wemo switches to Nest status, this is probably the cheapest solution at the moment (2020).
 
 Dependencies
 ------------
-pyWeMo depends on Python packages: requests, ifaddr and six
+WeNestMo is built on top of pyWeMo. It therefore depends on Python packages: requests, ifaddr and six
 
 How to use
 ----------
-
-.. code-block:: python
-
-    >> import pywemo
-
-    >> devices = pywemo.discover_devices()
-    >> print(devices)
-    [<WeMo Insight "AC Insight">]
-
-    >> devices[0].toggle()
+Get your Google credentials, update the config file, and leave wenestmo.py running on a device in your house.
 
 
-If discovery doesn't work on your network
------------------------------------------
-On some networks discovery doesn't work reliably, in that case if you can find the ip address of your Wemo device you can use the following code.
-
-.. code-block:: python
-
-    >> import pywemo
-
-    >> address = "192.168.100.193"
-    >> port = pywemo.ouimeaux_device.probe_wemo(address)
-    >> url = 'http://%s:%i/setup.xml' % (address, port)
-    >> device = pywemo.discovery.device_from_description(url, None)
-    >> print(device)
-    <WeMo Insight "AC Insight">
-
-Please note that you need to use ip addresses as shown above, rather than hostnames, otherwise the subscription update logic won't work.
-
-Developing
--------
-Setup and builds are fully automated. You can run build pipeline locally by running.
-
-.. code-block:: none
-
-    # Setup, build, lint and test the code:
-    
-    ./scripts/build.sh
+#.  If you have an old-school Nest account, you must migrate to the newer Google system. Note this breaks IFTTT compatibility and is not reversable. https://support.google.com/googlenest/answer/9297676?p=migration-account-faq&visit_id=637364965164737777-3554099459&rd=1
+#.  Create a Google Device Access developer account. They charge $5 (one time cost) and you should be comfortable using the linux Curl tool to complete the process. Follow the steps carefully at https://developers.google.com/nest/device-access/get-started
+    Make sure to save the oauth credential file and save the "Project ID" in the last step of Getting Started. It looks like a UUID.
+#.  Open up config.ini and fill in your details. Mainly, the device names you want controlled, and your Google credentials.
+    [wemo]
+    # Devices to turn on when the heater is running (register boosters, heaters, etc)
+    HeatingDeviceNames = ["Vent booster", "Space heater"]
+    # Devices to turn on when the cooler is running (fans etc)
+    CoolingDeviceNames = ["Vent booster", "Ceiling fan"]
+    [google]
+    # Secret file that must be saved during the "Set up Google Cloud Platform" setup step
+    ClientSecretFile = goog_credentials.json
+    # Project ID aka Enterprise which is generated as the last step of "Create a Device Access project" setup step
+    Enterprise = 9aba7f9c-13a8-4b3d-bf04-2d5adad3da55
+#.  Now just leave "python wenestmo.py" running on some device on your network. (PC, raspberrypi, toaster, whatever). It needs to have internet access (for Nest integration) and be on the same subnet as your Wemos. For example, running in a docker image did not work for me; it could not find the local Wemo devices.
 
 License
 -------
 The code in pywemo/ouimeaux_device is written and copyright by Ian McCracken and released under the BSD license. The rest is released under the MIT license.
-
-.. |Build Badge| image:: https://travis-ci.org/pavoni/pywemo.svg?branch=master
-   :target: https://travis-ci.org/pavoni/pywemo
-   :alt: Status of latest Travis CI build
-.. |PyPI Version Badge| image:: https://pypip.in/v/pywemo/badge.png
-    :target: https://pypi.org/project/pywemo/
-    :alt: Latest PyPI version
-.. |PyPI Downloads Badge| image:: https://pypip.in/d/pywemo/badge.png
-    :target: https://pypi.org/project/pywemo/
-    :alt: Number of PyPI downloads
