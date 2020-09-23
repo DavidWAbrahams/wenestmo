@@ -8,10 +8,7 @@ Google recently deprecated the Works With Nest program, and IFTTT is adding a pa
 
 Dependencies
 ------------
-WeNestMo is built on top of pyWeMo. It therefore depends on Python packages: requests, ifaddr and six
-
-.. code-block:: python
-    pip install requests ifaddr six
+WeNestMo is built on top of pyWeMo. It therefore depends on Python packages: "pip install requests ifaddr six"
 
 How to use
 ----------
