@@ -19,12 +19,12 @@ Get your Google credentials, update the config file, and leave wenestmo.py runni
 #.  Create a Google Device Access developer account. They charge $5 (one time cost) and you should be comfortable using the linux Curl tool to complete the process. Follow the steps carefully at https://developers.google.com/nest/device-access/get-started
     Make sure to save the oauth credential file and save the "Project ID" in the last step of Getting Started. It looks like a UUID.
 #.  Open up config.ini and fill in your details. Mainly, the device names you want controlled, and your Google credentials.
-    .. code-block:: python
         | [wemo]
         | # Devices to turn on when the heater is running (register boosters, heaters, etc)
         | HeatingDeviceNames = ["Vent booster", "Space heater"]
         | # Devices to turn on when the cooler is running (fans etc)
         | CoolingDeviceNames = ["Vent booster", "Ceiling fan"]
+        |
         | [google]
         | # Secret file that must be saved during the "Set up Google Cloud Platform" setup step
         | ClientSecretFile = goog_credentials.json
