@@ -2,7 +2,7 @@ WeNestMo
 ================================================================
 Trigger Wemo switches based on Nest thermostat status.
 
-Turn on ceiling fans for cooling, or space heaters for heating etc.
+Easily sync a ceiling fan with your AC, a space heater with your funrace, or a register booster with both.
 
 Google recently deprecated the Works With Nest program, and IFTTT is adding a paywal anyway. So if you want sync Wemo switches to Nest status, this is probably the cheapest solution at the moment (2020).
 
