@@ -17,7 +17,7 @@ Get your Google credentials, update the config file, and leave wenestmo.py runni
 
 #.  If you have an old-school Nest account, you must `migrate to the newer Google system <https://support.google.com/googlenest/answer/9297676?p=migration-account-faq>`_. Note this breaks IFTTT compatibility and is not reversable.
 #.  Create a Google Device Access developer account. They charge $5 (one time cost) and you should be comfortable using the linux Curl tool to complete the process. Follow the steps carefully at https://developers.google.com/nest/device-access/get-started
-    Make sure to save the oauth credential file and save the "Project ID" in the last step of Getting Started. It looks like a UUID.
+    Make sure to save the oauth credential file to the wenestmo folder and record the "Project ID" in the last step of Getting Started. It looks like a UUID.
 #.  On the `GCP credentials page <https://console.developers.google.com/apis/credentials>`_, edit your OAuth client "URIs" to include http://localhost:8080/
 #.  Open up config.ini and fill in your details. Mainly, the device names you want controlled, and your Google credentials.
     ..
