@@ -1,5 +1,6 @@
 import configparser
 from collections import Counter, deque
+import datetime
 import httplib2
 import json
 from random import random
@@ -187,9 +188,9 @@ while(True):
     temperature_c = thermostat['traits']['sdm.devices.traits.Temperature']['ambientTemperatureCelsius']
     if FAHRENHEIT:
       temperature_f = (temperature_c * 9/5) + 32
-      print('Temperature: {:.1f} degrees F'.format(temperature_f))
+      print('{} temperature: {:.1f} degrees F'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), temperature_f))
     else:
-      print('Temperature: {:.1f} degrees C'.format(temperature_c))
+      print('{} temperature: {:.1f} degrees C'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), temperature_c))
     hvac_status = thermostat['traits']['sdm.devices.traits.ThermostatHvac']['status']
     if hvac_status == prev_hvac_status:
       # If code turned a switch on but the user manually turned it off,
