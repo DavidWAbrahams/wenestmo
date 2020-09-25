@@ -188,9 +188,9 @@ while(True):
     temperature_c = thermostat['traits']['sdm.devices.traits.Temperature']['ambientTemperatureCelsius']
     if FAHRENHEIT:
       temperature_f = (temperature_c * 9/5) + 32
-      print('{} temperature: {:.1f} degrees F'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), temperature_f))
+      print('{} temperature: {:.1f} degrees F'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), temperature_f))
     else:
-      print('{} temperature: {:.1f} degrees C'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), temperature_c))
+      print('{} temperature: {:.1f} degrees C'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), temperature_c))
     hvac_status = thermostat['traits']['sdm.devices.traits.ThermostatHvac']['status']
     if hvac_status == prev_hvac_status:
       # If code turned a switch on but the user manually turned it off,

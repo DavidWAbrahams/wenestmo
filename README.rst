@@ -2,7 +2,7 @@ WeNestMo
 ================================================================
 Trigger Wemo switches based on Nest thermostat status.
 
-Easily sync a ceiling fan with your AC, a space heater with your funrace, or a register booster with both.
+Easily sync a fan with your AC, a space heater with your furnace, or trigger a portable humidifier when the air gets dry.
 
 Google recently deprecated the Works With Nest program, and IFTTT is adding a paywal anyway. So if you want sync Wemo switches to Nest status, this is probably the cheapest solution at the moment (2020).
 
@@ -28,6 +28,8 @@ Get your Google credentials, update the config file, and leave wenestmo.py runni
         | AuxiliaryHeatingDeviceNames = ["My space heater"]
         | # Devices to turn on when the cooler is running (fans etc)
         | CoolingDeviceNames = ["Vent booster", "Ceiling fan"]
+        | # Small humidifiers to trigger when the air is dry
+        | HumidifierNames = []
         |
         | [google]
         | # Secret file that must be saved during the "Set up Google Cloud Platform" setup step
