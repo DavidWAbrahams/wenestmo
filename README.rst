@@ -24,6 +24,8 @@ Get your Google credentials, update the config file, and leave wenestmo.py runni
         | [wemo]
         | # Devices to turn on when the heater is running (register boosters, heaters, etc)
         | HeatingDeviceNames = ["Vent booster", "Space heater"]
+        | # Auxiliary heating devices to turn on when the heat is very low
+        | AuxiliaryHeatingDeviceNames = ["My space heater"]
         | # Devices to turn on when the cooler is running (fans etc)
         | CoolingDeviceNames = ["Vent booster", "Ceiling fan"]
         |

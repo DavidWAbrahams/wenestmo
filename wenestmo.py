@@ -21,6 +21,8 @@ config.read('config.ini')
 # Console output will show the temperature in F or C.
 FAHRENHEIT = config.getboolean('DEFAULT', 'Fahrenheit')
 POLLING_PERIOD_S = config.getint('DEFAULT', 'PollingPeriodS')
+aux_heat_threshold = config.getint('DEFAULT', 'AuxHeatThreshold')
+AUX_HEAT_THRESHOLD_C = (aux_heat_threshold-32)*5/9. if FAHRENHEIT else aux_heat_threshold
 
 GOOGLE_ENTERPRISE = config['google']['Enterprise']
 GOOGLE_CLIENT_SECRET = config['google']['ClientSecretFile']
@@ -28,6 +30,7 @@ GOOGLE_SCOPE = 'https://www.googleapis.com/auth/sdm.service'
 
 WEMO_HEATING_DEVICE_NAMES = set(json.loads(config.get('wemo', 'HeatingDeviceNames')))
 WEMO_COOLING_DEVICE_NAMES = set(json.loads(config.get('wemo', 'CoolingDeviceNames')))
+WEMO_AUXILLIARY_HEATING_DEVICE_NAMES = set(json.loads(config.get('wemo', 'AuxiliaryHeatingDeviceNames')))
 
 # Start the OAuth flow to retrieve credentials.
 # This may require launching a browser, one time.
@@ -156,8 +159,17 @@ def power_on_needed_wemo(wemo, hvac_status):
   except:
     print('Wemo powering exception:')
     traceback.print_exc()
+    
+def auxHeatIsNeeded(thermostat):
+  # Actual room temperature.
+  temperature_c = thermostat['traits']['sdm.devices.traits.Temperature']['ambientTemperatureCelsius']
+  # The temperature that the heater is "set" to.
+  heat_temperature_c = thermostat['traits']['sdm.devices.traits.ThermostatTemperatureSetpoint']['heatCelsius']
+  hvac_status = thermostat['traits']['sdm.devices.traits.ThermostatHvac']['status']
+  return hvac_status == 'HEATING' and heat_temperature_c - temperature_c > AUX_HEAT_THRESHOLD_C  
 
 prev_hvac_status = None
+aux_heat_engaged = False
 while(True):
   # Detect when the HVAC status changes to heating, cooling, or neither.
   # Toggle Wemo switches accordingly.
@@ -165,6 +177,7 @@ while(True):
   try:
     wemos = get_wemo_devices()
     thermostat = get_first_thermostat()
+    # Actual room temperature.
     temperature_c = thermostat['traits']['sdm.devices.traits.Temperature']['ambientTemperatureCelsius']
     if FAHRENHEIT:
       temperature_f = (temperature_c * 9/5) + 32
@@ -173,24 +186,34 @@ while(True):
       print('Temperature: {:.1f} degrees C'.format(temperature_c))
     hvac_status = thermostat['traits']['sdm.devices.traits.ThermostatHvac']['status']
     if hvac_status == prev_hvac_status:
-      # no change in hvac status, just do monitoring.
       # If code turned a switch on but the user manually turned it off,
       # then forget about turning it off by code later. The user has taken
       # responsibility.
       user_toggled = set()
       for wemo in wemos:
-        if wemo.is_off() and wemo in activated_heating_devices:
+        if wemo in activated_heating_devices and wemo.is_off():
           user_toggled.add(wemo)
-        if wemo.is_off() and wemo in activated_cooling_devices:
+        if wemo in activated_cooling_devices and wemo.is_off():
           user_toggled.add(wemo) 
         activated_heating_devices -= user_toggled
         activated_cooling_devices -= user_toggled
     else:
       # hvac status has changed. flick some switches.
+      aux_heat_engaged = False
       for wemo in wemos:
-        if hvac_status == 'COOLING' and wemo.name in WEMO_COOLING_DEVICE_NAMES and wemo.is_off():
+        if hvac_status == 'COOLING' and wemo.name in WEMO_COOLING_DEVICE_NAMES:
           power_on_needed_wemo(wemo, hvac_status)
-        elif hvac_status == 'HEATING' and wemo.name in WEMO_HEATING_DEVICE_NAMES and wemo.is_off():
+        elif hvac_status == 'HEATING' and wemo.name in WEMO_HEATING_DEVICE_NAMES:
+          power_on_needed_wemo(wemo, hvac_status)
+    # Auxiliary heat can kick on in the middle of a cycle, but only once per cycle.
+    if auxHeatIsNeeded(thermostat) and not aux_heat_engaged:
+      aux_heat_engaged = True
+      # aux heat includes stuff like little space heaters. If you turned one on
+      # manually, I want to leave it out of automatic control so you can have
+      # your room as toasty as you like. Hence the "is_off()" check before
+      # starting automatic control here.
+      for wemo in wemos:
+        if wemo.name in WEMO_AUXILLIARY_HEATING_DEVICE_NAMES and wemo.is_off():
           power_on_needed_wemo(wemo, hvac_status)
     power_off_unneeded_wemos(hvac_status)
     prev_hvac_status = hvac_status
