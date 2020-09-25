@@ -23,6 +23,8 @@ FAHRENHEIT = config.getboolean('DEFAULT', 'Fahrenheit')
 POLLING_PERIOD_S = config.getint('DEFAULT', 'PollingPeriodS')
 aux_heat_threshold = config.getint('DEFAULT', 'AuxHeatThreshold')
 AUX_HEAT_THRESHOLD_C = (aux_heat_threshold-32)*5/9. if FAHRENHEIT else aux_heat_threshold
+HUMIDITY_PERCENT_TARGET = config.getint('DEFAULT', 'HumidityPercentTarget')
+HUMIDITY_PERCENT_THRESHOLD = config.getint('DEFAULT', 'HumidityPercentThreshold')
 
 GOOGLE_ENTERPRISE = config['google']['Enterprise']
 GOOGLE_CLIENT_SECRET = config['google']['ClientSecretFile']
@@ -31,6 +33,7 @@ GOOGLE_SCOPE = 'https://www.googleapis.com/auth/sdm.service'
 WEMO_HEATING_DEVICE_NAMES = set(json.loads(config.get('wemo', 'HeatingDeviceNames')))
 WEMO_COOLING_DEVICE_NAMES = set(json.loads(config.get('wemo', 'CoolingDeviceNames')))
 WEMO_AUXILLIARY_HEATING_DEVICE_NAMES = set(json.loads(config.get('wemo', 'AuxiliaryHeatingDeviceNames')))
+WEMO_HUMIDIFIER_DEVICE_NAMES = set(json.loads(config.get('wemo', 'HumidifierNames')))
 
 # Start the OAuth flow to retrieve credentials.
 # This may require launching a browser, one time.
@@ -131,6 +134,7 @@ def reset_wemo_devices(device_set):
 
 activated_heating_devices = set()
 activated_cooling_devices = set()
+activated_humidifier_devices = set()
 
 def power_off_unneeded_wemos(hvac_status):
   # Turns off wemos that aren't needed in the current state.
@@ -154,6 +158,8 @@ def power_on_needed_wemo(wemo, hvac_status):
     elif hvac_status == 'HEATING':
       activated_heating_devices.add(wemo)
       activated_cooling_devices.discard(wemo)
+    elif hvac_status == 'HUMIDIFYING':
+      activated_humidifier_devices.add(wemo)
     else:
       print('Unexpected hvac status to enable a wemo: {}'.format(hvac_status))
   except:
@@ -205,6 +211,14 @@ while(True):
           power_on_needed_wemo(wemo, hvac_status)
         elif hvac_status == 'HEATING' and wemo.name in WEMO_HEATING_DEVICE_NAMES:
           power_on_needed_wemo(wemo, hvac_status)
+    # Humidifiers can kick on or off independent of the hvac
+    humidity = thermostat['traits']['sdm.devices.traits.Humidity']['ambientHumidityPercent']
+    if humidity < HUMIDITY_PERCENT_TARGET - HUMIDITY_PERCENT_THRESHOLD:
+      for wemo in wemos:
+        if wemo.name in WEMO_HUMIDIFIER_DEVICE_NAMES:
+          power_on_needed_wemo(wemo, 'HUMIDIFYING')  # dummy hvac status, but our method understands it anyway.
+    elif humidity > HUMIDITY_PERCENT_TARGET + HUMIDITY_PERCENT_THRESHOLD:
+      reset_wemo_devices(activated_humidifier_devices)
     # Auxiliary heat can kick on in the middle of a cycle, but only once per cycle.
     if auxHeatIsNeeded(thermostat) and not aux_heat_engaged:
       aux_heat_engaged = True
