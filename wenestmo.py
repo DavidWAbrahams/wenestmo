@@ -139,6 +139,8 @@ activated_humidifier_devices = set()
 
 def power_off_unneeded_wemos(hvac_status):
   # Turns off wemos that aren't needed in the current state.
+  # Should not mess with devices that were manually toggled, since it acts only
+  # on devices that this script turned on.
   if hvac_status == 'COOLING':
     reset_wemo_devices(activated_heating_devices)
   elif hvac_status == 'HEATING':
@@ -175,6 +177,31 @@ def auxHeatIsNeeded(thermostat):
   hvac_status = thermostat['traits']['sdm.devices.traits.ThermostatHvac']['status']
   return hvac_status == 'HEATING' and heat_temperature_c - temperature_c > AUX_HEAT_THRESHOLD_C  
 
+def forget_user_controlled_wemos(all_wemos):
+  # If code turned a switch on but the user manually turned it off,
+  # then forget about turning it off by code later. The user has taken
+  # responsibility.
+  global activated_heating_devices
+  global activated_cooling_devices
+  global activated_humidifier_devices
+  activated_wemos = activated_heating_devices | activated_cooling_devices | activated_humidifier_devices
+  user_toggled = set()
+  
+  for wemo in activated_wemos:
+    if wemo.is_off():
+      user_toggled.add(wemo)
+  
+  # As a second pass, also check for user-toggled devices by mac address.
+  # This might be important if a wemo device's name is changed.
+  activated_mac_to_wemo = {x.mac: x for x in activated_wemos}
+  for wemo in all_wemos:
+    if wemo.mac in activated_mac_to_wemo and wemo.is_off():
+      user_toggled.add(activated_mac_to_wemo[wemo.mac])
+      
+  activated_heating_devices -= user_toggled
+  activated_cooling_devices -= user_toggled
+  activated_humidifier_devices -= user_toggled
+
 prev_hvac_status = None
 aux_heat_engaged = False
 while(True):
@@ -192,19 +219,10 @@ while(True):
     else:
       print('{} temperature: {:.1f} degrees C'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), temperature_c))
     hvac_status = thermostat['traits']['sdm.devices.traits.ThermostatHvac']['status']
-    if hvac_status == prev_hvac_status:
-      # If code turned a switch on but the user manually turned it off,
-      # then forget about turning it off by code later. The user has taken
-      # responsibility.
-      user_toggled = set()
-      for wemo in wemos:
-        if wemo in activated_heating_devices and wemo.is_off():
-          user_toggled.add(wemo)
-        if wemo in activated_cooling_devices and wemo.is_off():
-          user_toggled.add(wemo) 
-        activated_heating_devices -= user_toggled
-        activated_cooling_devices -= user_toggled
-    else:
+
+    forget_user_controlled_wemos(wemos)
+        
+    if hvac_status != prev_hvac_status:
       # hvac status has changed. flick some switches.
       aux_heat_engaged = False
       for wemo in wemos:
@@ -212,6 +230,7 @@ while(True):
           power_on_needed_wemo(wemo, hvac_status)
         elif hvac_status == 'HEATING' and wemo.name in WEMO_HEATING_DEVICE_NAMES:
           power_on_needed_wemo(wemo, hvac_status)
+    
     # Humidifiers can kick on or off independent of the hvac
     humidity = thermostat['traits']['sdm.devices.traits.Humidity']['ambientHumidityPercent']
     if humidity < HUMIDITY_PERCENT_TARGET - HUMIDITY_PERCENT_THRESHOLD:
@@ -220,6 +239,7 @@ while(True):
           power_on_needed_wemo(wemo, 'HUMIDIFYING')  # dummy hvac status, but our method understands it anyway.
     elif humidity > HUMIDITY_PERCENT_TARGET + HUMIDITY_PERCENT_THRESHOLD:
       reset_wemo_devices(activated_humidifier_devices)
+    
     # Auxiliary heat can kick on in the middle of a cycle, but only once per cycle.
     if auxHeatIsNeeded(thermostat) and not aux_heat_engaged:
       aux_heat_engaged = True
