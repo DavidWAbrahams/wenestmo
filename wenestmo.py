@@ -1,16 +1,16 @@
 import configparser
-from collections import Counter, deque
 import datetime
 import json
-from random import random
 import time
 import traceback
+from collections import Counter, deque
+from random import random
 
 import httplib2
+from googleapiclient.discovery import build
 from oauth2client.client import flow_from_clientsecrets
 from oauth2client.file import Storage
 from oauth2client.tools import run_flow
-from googleapiclient.discovery import build
 
 import pywemo
 
@@ -40,11 +40,10 @@ WEMO_AUXILLIARY_HEATING_DEVICE_NAMES = set(
 )
 WEMO_HUMIDIFIER_DEVICE_NAMES = set(json.loads(config.get("wemo", "HumidifierNames")))
 
-# Start the OAuth flow to retrieve credentials.
-# This may require launching a browser, one time.
-
 
 def authorize_credentials():
+    """Start the OAuth flow to retrieve credentials.
+    This may require launching a browser, one time."""
     # Fetch credentials from storage
     credentials = STORAGE.get()
     # If the credentials doesn't exist in the storage location then run the flow.
@@ -255,6 +254,26 @@ def forget_user_controlled_wemos(all_wemos):
     activated_humidifier_devices -= user_toggled
 
 
+def print_temp(thermostat):
+    # Actual room temperature.
+    temperature_c = thermostat["traits"]["sdm.devices.traits.Temperature"][
+        "ambientTemperatureCelsius"
+    ]
+    if FAHRENHEIT:
+        temperature_f = (temperature_c * 9 / 5.0) + 32
+        print(
+            "{} temperature: {:.1f} degrees F".format(
+                start.strftime("%Y-%m-%d %H:%M"), temperature_f
+            )
+        )
+    else:
+        print(
+            "{} temperature: {:.1f} degrees C".format(
+                start.strftime("%Y-%m-%d %H:%M"), temperature_c
+            )
+        )
+
+
 # Normally we don't take control of already-running devices since we don't want to override user
 # intent. But on first launch, we do. This prevents devices from getting orphaned on if the script
 # is restarted.
@@ -266,26 +285,11 @@ while True:
     # Detect when the HVAC status changes to heating, cooling, or neither.
     # Toggle Wemo switches accordingly.
     # Remember that some switches may be for both heating and cooling.
+    start = datetime.datetime.now()
     try:
         wemos = get_wemo_devices()
         thermostat = get_first_thermostat()
-        # Actual room temperature.
-        temperature_c = thermostat["traits"]["sdm.devices.traits.Temperature"][
-            "ambientTemperatureCelsius"
-        ]
-        if FAHRENHEIT:
-            temperature_f = (temperature_c * 9 / 5) + 32
-            print(
-                "{} temperature: {:.1f} degrees F".format(
-                    datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), temperature_f
-                )
-            )
-        else:
-            print(
-                "{} temperature: {:.1f} degrees C".format(
-                    datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), temperature_c
-                )
-            )
+        print_temp(thermostat)
         hvac_status = thermostat["traits"]["sdm.devices.traits.ThermostatHvac"][
             "status"
         ]
@@ -339,5 +343,7 @@ while True:
     except:
         print("Top-level exception:")
         traceback.print_exc()
+        first_iteration = False
     first_iteration = False
-    time.sleep(POLLING_PERIOD_S)
+    iteration_s = (datetime.datetime.now() - start).total_seconds()
+    time.sleep(max(POLLING_PERIOD_S - iteration_s, 5))
