@@ -255,8 +255,13 @@ def forget_user_controlled_wemos(all_wemos):
     activated_humidifier_devices -= user_toggled
 
 
+# Normally we don't take control of already-running devices since we don't want to override user
+# intent. But on first launch, we do. This prevents devices from getting orphaned on if the script
+# is restarted.
+first_iteration = True
 prev_hvac_status = None
 aux_heat_engaged = False
+humidifiers_engaged = False
 while True:
     # Detect when the HVAC status changes to heating, cooling, or neither.
     # Toggle Wemo switches accordingly.
@@ -302,12 +307,19 @@ while True:
         humidity = thermostat["traits"]["sdm.devices.traits.Humidity"][
             "ambientHumidityPercent"
         ]
-        if humidity < HUMIDITY_PERCENT_TARGET - HUMIDITY_PERCENT_THRESHOLD:
+        if (
+            not humidifiers_engaged
+            and humidity < HUMIDITY_PERCENT_TARGET - HUMIDITY_PERCENT_THRESHOLD
+        ):
+            humidifiers_engaged = True
             for wemo in wemos:
-                if wemo.name in WEMO_HUMIDIFIER_DEVICE_NAMES:
+                if wemo.name in WEMO_HUMIDIFIER_DEVICE_NAMES and (
+                    wemo.is_off() or first_iteration
+                ):
                     # dummy hvac status, but our method understands it anyway.
                     power_on_needed_wemo(wemo, "HUMIDIFYING")
         elif humidity > HUMIDITY_PERCENT_TARGET + HUMIDITY_PERCENT_THRESHOLD:
+            humidifiers_engaged = False
             reset_wemo_devices(activated_humidifier_devices)
 
         # Auxiliary heat can kick on in the middle of a cycle, but only once per cycle.
@@ -318,11 +330,14 @@ while True:
             # your room as toasty as you like. Hence the "is_off()" check before
             # starting automatic control here.
             for wemo in wemos:
-                if wemo.name in WEMO_AUXILLIARY_HEATING_DEVICE_NAMES and wemo.is_off():
+                if wemo.name in WEMO_AUXILLIARY_HEATING_DEVICE_NAMES and (
+                    wemo.is_off() or first_iteration
+                ):
                     power_on_needed_wemo(wemo, hvac_status)
         power_off_unneeded_wemos(hvac_status)
         prev_hvac_status = hvac_status
     except:
         print("Top-level exception:")
         traceback.print_exc()
+    first_iteration = False
     time.sleep(POLLING_PERIOD_S)
