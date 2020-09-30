@@ -146,9 +146,13 @@ device_error_count = Counter()
 MAX_RETRIES = config.getint("wemo", "MaxPowerOffRetries")
 
 
-def reset_wemo_devices(device_set):
-    # turns as set of wemos off, and removes them from the
-    # set if successful.
+def reset_wemo_devices(device_set, skipping=None):
+    """Turns as set of wemos off, and removes them from the set if successful.
+    Devices specified by 'skipping' are not turned off, although they are
+    still removed from the set."""
+
+    if skipping:
+        device_set.difference_update(skipping)
     toggled_successfully = set()
     for device in device_set:
         try:
@@ -179,12 +183,20 @@ def power_off_unneeded_wemos(hvac_status):
     # Should not mess with devices that were manually toggled, since it acts only
     # on devices that this script turned on.
     if hvac_status == "COOLING":
-        reset_wemo_devices(activated_heating_devices)
+        reset_wemo_devices(
+            activated_heating_devices, skipping=activated_humidifier_devices
+        )
     elif hvac_status == "HEATING":
-        reset_wemo_devices(activated_cooling_devices)
+        reset_wemo_devices(
+            activated_cooling_devices, skipping=activated_humidifier_devices
+        )
     else:
-        reset_wemo_devices(activated_heating_devices)
-        reset_wemo_devices(activated_cooling_devices)
+        reset_wemo_devices(
+            activated_heating_devices, skipping=activated_humidifier_devices
+        )
+        reset_wemo_devices(
+            activated_cooling_devices, skipping=activated_humidifier_devices
+        )
 
 
 def power_on_needed_wemo(device, hvac_status):
@@ -324,7 +336,10 @@ while True:
                     power_on_needed_wemo(wemo, "HUMIDIFYING")
         elif humidity > HUMIDITY_PERCENT_TARGET + HUMIDITY_PERCENT_THRESHOLD:
             humidifiers_engaged = False
-            reset_wemo_devices(activated_humidifier_devices)
+            reset_wemo_devices(
+                activated_humidifier_devices,
+                skipping=activated_cooling_devices | activated_heating_devices,
+            )
 
         # Auxiliary heat can kick on in the middle of a cycle, but only once per cycle.
         if aux_heat_is_needed(thermostat) and not aux_heat_engaged:
