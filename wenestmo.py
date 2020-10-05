@@ -23,9 +23,7 @@ config.read("config.ini")
 FAHRENHEIT = config.getboolean("DEFAULT", "Fahrenheit")
 POLLING_PERIOD_S = config.getint("DEFAULT", "PollingPeriodS")
 aux_heat_thresh = config.getint("DEFAULT", "AuxHeatThreshold")
-AUX_HEAT_THRESHOLD_C = (
-    (aux_heat_thresh - 32) * 5 / 9.0 if FAHRENHEIT else aux_heat_thresh
-)
+AUX_HEAT_THRESHOLD_C = aux_heat_thresh * 5 / 9.0 if FAHRENHEIT else aux_heat_thresh
 HUMIDITY_PERCENT_TARGET = config.getint("DEFAULT", "HumidityPercentTarget")
 HUMIDITY_PERCENT_THRESHOLD = config.getint("DEFAULT", "HumidityPercentThreshold")
 
