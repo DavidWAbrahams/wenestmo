@@ -8,7 +8,8 @@ Google recently deprecated the Works With Nest program, and IFTTT is adding a pa
 
 Dependencies
 ------------
-WeNestMo is built on top of pyWeMo. It therefore depends on Python packages: "pip install requests ifaddr six"
+Install depedencies with: "pip install -r requirements.txt"
+WeNestMo is built on top of pyWeMo.
 
 How to use
 ----------
@@ -37,7 +38,7 @@ Get your Google credentials, update the config file, and leave wenestmo.py runni
         | # Project ID aka Enterprise which is generated as the last step of "Create a Device Access project" setup step
         | Enterprise = 9aba7f9c-13a8-4b3d-bf04-2d5adad3da55
 #.  Run "python wenestmo.py" and follow the directions to do one-time authentication in a browser window.
-#.  Now just leave "python wenestmo.py" running on some device on your network. (PC, raspberrypi, toaster, whatever). It needs to have internet access (for Nest integration) and be on the same subnet as your Wemos. For example, running in a docker image did not work for me; it could not find the local Wemo devices.
+#.  Now just leave "python wenestmo.py" running on some device on your network. (PC, raspberrypi, toaster, whatever). It needs to have internet access (for Nest integration) and be on the same subnet as your Wemos. For example, running in a docker image did not work for me; it could not find the local Wemo devices. First time authentication is tricky on a headless machine. I found the easiest way was to run wenestmo once on a normal machine and then copy "credentials.storage" to the working directory on the headless device.
 
 License
 -------

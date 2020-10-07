@@ -1,0 +1,7 @@
+configparser
+google-api-python-client
+httplib2
+ifaddr
+oauth2client
+requests
+six
