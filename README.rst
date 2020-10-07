@@ -9,6 +9,7 @@ Google recently deprecated the Works With Nest program, and IFTTT is adding a pa
 Dependencies
 ------------
 Install depedencies with: "pip install -r requirements.txt"
+
 WeNestMo is built on top of pyWeMo.
 
 How to use
