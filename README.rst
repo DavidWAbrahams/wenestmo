@@ -1,10 +1,10 @@
 WeNestMo
 ================================================================
-Trigger Wemo switches based on Nest thermostat status.
+Trigger Wemo switches based on Nest thermostat status. (Now with some Bond hub support too).
 
 Easily sync a fan with your AC, a space heater with your furnace, or trigger a portable humidifier when the air gets dry.
 
-Google recently deprecated the Works With Nest program, and IFTTT is adding a paywal anyway. So if you want sync Wemo switches to Nest status, this is probably the cheapest solution at the moment (2020).
+Google recently deprecated the Works With Nest program, and IFTTT is adding a paywal anyway. So if you want to sync Wemo switches to Nest status, this is probably the cheapest solution at the moment (2020).
 
 Dependencies
 ------------
@@ -21,7 +21,7 @@ Get your Google credentials, update the config file, and leave wenestmo.py runni
 #.  Create a Google Device Access developer account. They charge $5 (one time cost) and you should be comfortable using the linux Curl tool to complete the process. Follow the steps carefully at https://developers.google.com/nest/device-access/get-started
     Make sure to save the oauth credential file to the wenestmo folder and record the "Project ID" in the last step of Getting Started. It looks like a UUID.
 #.  On the `GCP credentials page <https://console.developers.google.com/apis/credentials>`_, edit your OAuth client "URIs" to include http://localhost:8080/
-#.  Open up config.ini and fill in your details. Mainly, the device names you want controlled, and your Google credentials.
+#.  Open up config.ini and fill in your details. Mainly, the device names you want controlled, and your Google credentials. There is a section for Bond account details too for optionally controlling a Bond hub.
     ..
         | [wemo]
         | # Devices to turn on when the heater is running (register boosters, heaters, etc)
