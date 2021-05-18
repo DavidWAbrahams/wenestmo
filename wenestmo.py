@@ -5,6 +5,7 @@ import time
 import traceback
 from collections import Counter, deque
 from random import random
+import requests
 
 import httplib2
 from googleapiclient.discovery import build
@@ -37,6 +38,10 @@ WEMO_AUXILLIARY_HEATING_DEVICE_NAMES = set(
     json.loads(config.get("wemo", "AuxiliaryHeatingDeviceNames"))
 )
 WEMO_HUMIDIFIER_DEVICE_NAMES = set(json.loads(config.get("wemo", "HumidifierNames")))
+
+BOND_IP = config.get("bond", "HubIp")
+BOND_TOKEN = config.get("bond", "Token")
+BOND_FAN_IDS = set(json.loads(config.get("bond", "FanIds")))
 
 
 def authorize_credentials():
@@ -316,6 +321,26 @@ while True:
                     hvac_status == "HEATING" and wemo.name in WEMO_HEATING_DEVICE_NAMES
                 ):
                     power_on_needed_wemo(wemo, hvac_status)
+            for fan in BOND_FAN_IDS:
+                address_template = "http://{}/v2/devices/{}/actions/{}"
+                if hvac_status == "COOLING":
+                    response = requests.put(
+                        address_template.format(BOND_IP, fan, "SetSpeed"),
+                        data='{"argument": 1}',
+                        headers={"BOND-Token": BOND_TOKEN},
+                    )
+                    print(
+                        "Turned on fan {}. Response: {}".format(fan, response.content)
+                    )
+                else:
+                    response = requests.put(
+                        address_template.format(BOND_IP, fan, "TurnOff"),
+                        data="{}",
+                        headers={"BOND-Token": BOND_TOKEN},
+                    )
+                    print(
+                        "Turned off fan {}. Response: {}".format(fan, response.content)
+                    )
 
         # Humidifiers can kick on or off independent of the hvac
         humidity = thermostat["traits"]["sdm.devices.traits.Humidity"][
