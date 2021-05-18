@@ -12,6 +12,8 @@ Install depedencies with: "pip install -r requirements.txt"
 
 WeNestMo is built on top of pyWeMo.
 
+Google charges a one-time $5 payment to enable API access. See the directions below for more detail.
+
 How to use
 ----------
 Get your Google credentials, update the config file, and leave wenestmo.py running on a device in your house.
